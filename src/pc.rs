@@ -1,22 +1,26 @@
-use crate::graph::Digraph;
+use crate::{graph::Digraph, dataframe::DataFrame};
 
-use polars::prelude::*;
+fn combinations<T: Copy>(n: usize, xs: Vec<T>) -> impl Iterator<Item = Vec<T>> {
+    assert!(1 <= n && n <= xs.len());
+    
+    let indices = (0..n).collect::<Vec<usize>>();
+    let index_to_modify = n - 1;
 
+    std::iter::once(indices.iter().map(|&index| xs[index]).collect()).chain(
+        std::iter::from_fn(move || {
+            while indices[index_to_modify] + 1 >= xs.len() && 
 
-
-fn conditional_independency(data: DataFrame, x: String, y: String, z: Vec<String>) {
-    data.lazy()
-        .groupby(z.iter().map(|x| col(x)).collect::<Vec<_>>())
-        .agg([col(&x).min(), col(&y).min()]);
-
+            Some(indices.iter().map(|&index| xs[index]).collect());
+        })
+    )
 }
 
 fn pc(data: DataFrame) {
-    let mut graph = Digraph::fully_connected(
-        data.get_column_names().into_iter().map(|x| x.to_owned()).collect::<Vec<_>>()
-    );
+    let mut graph = Digraph::fully_connected(data.names().clone());
 
-   
+    for n in 0..graph.len() {
+        // for 
+    }
 
     // let j = data.lazy().groupby(by);
 }

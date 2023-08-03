@@ -1,139 +1,122 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{BTreeSet, HashSet};
 
 
 #[derive(Clone)]
 pub struct Digraph {
-    nodes: HashSet<String>,
-    successors: HashMap<String, HashSet<String>>,
-    predecessors: HashMap<String, HashSet<String>> 
+    names: Vec<String>,
+    children: Vec<BTreeSet<usize>>,
+    parents: Vec<BTreeSet<usize>> 
 }
 
 impl Digraph {
-    pub fn unconnected(nodes: impl IntoIterator<Item = String>) -> Self {
-        let nodes: HashSet<String> = nodes.into_iter().collect::<HashSet<_>>();
+    pub fn unconnected(names: Vec<String>) -> Self {
+        let mut empty_mapping = vec![BTreeSet::default(); names.len()];
 
-        let mut empty_mapping = HashMap::default();
+        Digraph {
+            names,
+            children: empty_mapping.clone(),
+            parents: empty_mapping
+        }
+    }
 
-        for x in &nodes {
-            empty_mapping.insert(x.clone(), HashSet::new());
+    pub fn fully_connected(names: Vec<String>) -> Self {
+        let all_nodes = (0..names.len()).collect::<BTreeSet<_>>();
+
+        let mut full_mapping = Vec::with_capacity(names.len());
+
+        for i in 0..names.len() {
+            let mut neighbors = all_nodes.clone();
+            neighbors.remove(&i);
+            full_mapping.push(neighbors);
         }
 
         Digraph {
-            nodes,
-            successors: empty_mapping.clone(),
-            predecessors: empty_mapping
+            names,
+            children: full_mapping.clone(),
+            parents: full_mapping
         }
     }
 
-    pub fn fully_connected(nodes: impl IntoIterator<Item = String>) -> Self {
-        let nodes: HashSet<String> = nodes.into_iter().collect::<HashSet<_>>();
+    pub fn len(&self) -> usize { self.names.len() }
 
-        let mut full_mapping = HashMap::default();
+    pub fn node_index(&self, name: String) -> Option<usize> {
+        self.names.iter().position(|s| s == &name)
+    }
 
-        for x in &nodes {
-            let mut neighbors = nodes.clone();
-            neighbors.remove(x);
-            full_mapping.insert(x.clone(), neighbors);
+    pub fn push_node(&mut self, name: String) {
+        self.names.push(name);
+        self.parents.push(BTreeSet::default());
+        self.children.push(BTreeSet::default());
+    }
+
+    pub fn has_edge(&self, from: usize, to: usize) -> bool {
+        assert!(to < self.len());
+        self.children[from].contains(&to)
+    }
+
+    pub fn add_edge(&mut self, from: usize, to: usize) -> bool {
+        self.children[from].insert(to);
+        self.children[to].insert(from)
+    }
+
+    pub fn remove_edge(&mut self, from: usize, to: usize) -> bool {
+        self.children[from].remove(&to);
+        self.children[to].remove(&from)
+    }
+
+    pub fn remove_all_edges_from(&mut self, from: usize) {
+        for &to in &self.children[from] {
+            self.parents[to].remove(&from);
         }
 
-        Digraph {
-            nodes,
-            successors: full_mapping.clone(),
-            predecessors: full_mapping
-        }
+        self.children[from].clear();
     }
 
-    pub fn len(&self) -> usize { self.nodes.len() }
-
-    pub fn has_node(&self, node: String) -> bool {
-        self.nodes.contains(&node)
+    pub fn children(&self, from: usize) -> &BTreeSet<usize> {
+        &self.children[from]
     }
 
-    pub fn add_node(&mut self, node: String) -> bool {
-        if self.nodes.insert(node.clone()) {
-            self.successors.insert(node.clone(), HashSet::new());
-            self.predecessors.insert(node, HashSet::new());
-            true
-        } else {
-            false
-        }
+    pub fn parents(&self, from: usize) -> &BTreeSet<usize> {
+        &self.children[from]
     }
 
-    pub fn remove_node(&mut self, node: String) -> bool {
-        if self.nodes.remove(&node) {
-
-            for successor in self.successors.get(&node).unwrap() {
-                self.predecessors.get_mut(successor).unwrap().remove(&node);
-            }
-
-            for predecessor in self.predecessors.get(&node).unwrap() {
-                self.successors.get_mut(predecessor).unwrap().remove(&node);
-            }
-
-            self.successors.remove(&node);
-            self.predecessors.remove(&node);
-
-            true
-        } else {
-            false
-        }  
-    }
-
-    pub fn has_edge(&self, from: String, to: String) -> Option<bool> {
-        self.nodes.get(&to)?;
-        self.successors.get(&from).map(|x| x.contains(&to))
-    }
-
-    pub fn add_edge(&mut self, from: String, to: String) -> Option<bool> {
-        let from_successors = self.successors.get_mut(&from)?;
-        let to_predecessors = self.predecessors.get_mut(&to)?;
-
-        from_successors.insert(to);
-        Some(to_predecessors.insert(from))
-    }
-
-    pub fn remove_edge(&mut self, from: String, to: String) -> Option<bool> {
-        let from_successors = self.successors.get_mut(&from)?;
-        let to_predecessors = self.predecessors.get_mut(&to)?;
-
-        from_successors.remove(&to);
-        Some(to_predecessors.remove(&from))
+    pub fn all_edges(&self) -> impl '_ + Iterator<Item = (usize, usize)> {
+        self.children.iter().enumerate().flat_map(|(parent, children)| children.iter().map(move |&child| (parent, child)))
     }
 }
 
 impl Digraph {
-    pub fn topological_sort(&self) -> Option<Vec<String>> {
+    pub fn topological_sort(&self) -> Option<Vec<usize>> {
         let mut graph = self.clone();
 
-        let mut result = Vec::with_capacity(graph.nodes.len());
+        let mut result = Vec::with_capacity(graph.len());
 
-        let mut orphans = graph.predecessors.iter()
-            .filter(|e| e.1.is_empty())
-            .map(|e| e.0.to_owned())
+        let mut orphans = graph.parents.iter()
+            .enumerate()
+            .filter(|(_, parents)| parents.is_empty())
+            .map(|(node, _)| node)
             .collect::<HashSet<_>>();
 
-        while let Some(x) = orphans.iter().next() {
-            let x = x.to_owned();
-
+        while let Some(&x) = orphans.iter().next() {
             orphans.remove(&x);
-            result.push(x.clone());
+            result.push(x);
 
-            let successors = graph.successors.get(&x).unwrap();
             
-            for y in successors {
-                let predecessors = graph.predecessors.get(y).unwrap();
-                if predecessors.len() == 1 {
+            for &y in &graph.children[x] {
+                let parents = graph.parents(y);
+
+                if parents.len() == 1 {
                     orphans.insert(y.to_owned());
                 }
             }
 
-            graph.remove_node(x);
+            graph.remove_all_edges_from(x);
         }        
 
-        if graph.len() == 0 {
-            Some(result)
-        } else {
+        if graph.all_edges().count() > 0 {
             None
+        } else {
+            Some(result)
         }
     }
 

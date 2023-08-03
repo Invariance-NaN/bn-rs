@@ -1,4 +1,6 @@
 pub mod bayesian_network;
+pub mod itertools;
+pub mod dataframe;
 pub mod graph;
 pub mod pc;
 
