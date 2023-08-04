@@ -26,7 +26,7 @@ impl PMF {
 
 struct BayseianNetwork {
     graph: Digraph,
-    topological_sort: Vec<usize>,
+    topological_sort: Option<Vec<usize>>,
     pmfs: Vec<PMF>
 }
 

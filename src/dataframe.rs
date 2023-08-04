@@ -17,12 +17,12 @@ impl DataFrame {
     fn _debug_check_integrity(&self) {
         debug_assert_eq!(self.column_names.len(), self.columns.len());
 
-        if self.len == 0 {
-            debug_assert!(self.column_names.is_empty());
-            debug_assert!(self.columns.is_empty());
-            debug_assert_eq!(self.len, 0);
-            return;
-        }
+        // if self.len == 0 {
+        //     debug_assert!(self.column_names.is_empty());
+        //     debug_assert!(self.columns.is_empty());
+        //     debug_assert_eq!(self.len, 0);
+        //     return;
+        // }
 
         let column_lens = self.columns.iter().map(|x| x.len()).collect::<std::collections::HashSet<_>>();
 
@@ -71,7 +71,7 @@ impl DataFrame {
         Some(result)
     }
 
-    pub fn group_by(&self, columns: Vec<usize>) -> HashMap<Vec<u32>, DataFrame> {
+    pub fn group_by(&self, columns: &Vec<usize>) -> HashMap<Vec<u32>, DataFrame> {
         self._debug_check_integrity();
 
         let mut result: HashMap<Vec<u32>, DataFrame> = HashMap::new();
@@ -99,7 +99,7 @@ impl DataFrame {
 }
 
 impl DataFrame {
-    pub fn conditionally_independent(&self, x: usize, y: usize, zs: Vec<usize>) -> bool {
+    pub fn conditionally_independent(&self, x: usize, y: usize, zs: &Vec<usize>) -> bool {
         for (_, group) in self.group_by(zs) {
             let x_vals = group.iter().map(|row| row[x]).collect::<BTreeSet<_>>();
             let y_vals = group.iter().map(|row| row[y]).collect::<BTreeSet<_>>();

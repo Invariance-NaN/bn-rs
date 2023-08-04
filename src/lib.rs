@@ -1,8 +1,8 @@
 pub mod bayesian_network;
-pub mod itertools;
+pub mod iter;
 pub mod dataframe;
 pub mod graph;
-pub mod pc;
+pub mod structure_learning;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
