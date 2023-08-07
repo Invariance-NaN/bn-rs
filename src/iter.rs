@@ -1,6 +1,6 @@
 pub fn combinations<T: Copy>(n: usize, xs: Vec<T>) -> impl Iterator<Item = Vec<T>> {
     assert!(n <= xs.len());
-    
+
     let mut indices = (0..n).collect::<Vec<usize>>();
 
     std::iter::once(indices.iter().map(|&index| xs[index]).collect()).chain(
@@ -15,7 +15,7 @@ pub fn combinations<T: Copy>(n: usize, xs: Vec<T>) -> impl Iterator<Item = Vec<T
                         .find(|(_, index_pair)| index_pair[0] + 1 < index_pair[1])
                         .map(|(i, _)| i)?
                 };
-                
+
                 let mut value = indices[to_modify];
 
                 for i in to_modify..n {
@@ -27,4 +27,3 @@ pub fn combinations<T: Copy>(n: usize, xs: Vec<T>) -> impl Iterator<Item = Vec<T
         })
     )
 }
-

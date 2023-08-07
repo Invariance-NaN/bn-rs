@@ -1,5 +1,7 @@
 use std::collections::{BTreeSet, HashSet};
 
+use rand::random;
+
 #[derive(Clone, Debug)]
 
 pub struct Graph {
@@ -103,8 +105,33 @@ impl Graph {
         self.neighbors.iter().map(|x| x.len()).max().unwrap()
     }
 
-    pub fn digraph(self) -> Digraph {
+    pub fn directed(self) -> Digraph {
         Digraph { names: self.names, children: self.neighbors.clone(), parents: self.neighbors }
+    }
+
+    pub fn connected(&self, x: usize, y: usize) -> bool {
+        if x == y { return true; }
+
+        let mut layer = vec![x];
+        let mut seen: BTreeSet<_> = [x].into();
+
+        while !layer.is_empty() {
+            let mut next_layer = Vec::new();
+
+            for &s in &layer {
+                for &t in self.neighbors(s) {
+                    if t == y { return true; }
+
+                    if seen.contains(&t) { continue; }
+                    next_layer.push(t);
+                    seen.insert(t);
+                }
+            }
+
+            layer = next_layer;
+        }
+
+        false
     }
 }
 
@@ -113,152 +140,221 @@ impl Graph {
 pub struct Digraph {
     names: Vec<String>,
     children: Vec<BTreeSet<usize>>,
-    parents: Vec<BTreeSet<usize>> 
+    parents: Vec<BTreeSet<usize>>
 }
 
-// impl Digraph {
-//     pub fn unconnected(names: Vec<String>) -> Self {
-//         let mut empty_mapping = vec![BTreeSet::default(); names.len()];
+impl Digraph {
+    pub fn unconnected(names: Vec<String>) -> Self {
+        Graph::unconnected(names).directed()
+    }
 
-//         Digraph {
-//             names,
-//             children: empty_mapping.clone(),
-//             parents: empty_mapping
-//         }
-//     }
+    pub fn fully_connected(names: Vec<String>) -> Self {
+        Graph::fully_connected(names).directed()
+    }
 
-//     pub fn fully_connected(names: Vec<String>) -> Self {
-//         let all_nodes = (0..names.len()).collect::<BTreeSet<_>>();
+    pub fn len(&self) -> usize { self.names.len() }
 
-//         let mut full_mapping = Vec::with_capacity(names.len());
+    pub fn node_index(&self, name: String) -> Option<usize> {
+        self.names.iter().position(|s| s == &name)
+    }
 
-//         for i in 0..names.len() {
-//             let mut neighbors = all_nodes.clone();
-//             neighbors.remove(&i);
-//             full_mapping.push(neighbors);
-//         }
+    pub fn push_node(&mut self, name: String) {
+        self.names.push(name);
+        self.parents.push(BTreeSet::default());
+        self.children.push(BTreeSet::default());
+    }
 
-//         Digraph {
-//             names,
-//             children: full_mapping.clone(),
-//             parents: full_mapping
-//         }
-//     }
+    pub fn has_edge(&self, from: usize, to: usize) -> bool {
+        assert!(to < self.len());
+        self.children[from].contains(&to)
+    }
 
-//     pub fn len(&self) -> usize { self.names.len() }
+    pub fn add_edge(&mut self, from: usize, to: usize) -> bool {
+        self.children[from].insert(to);
+        self.parents[to].insert(from)
+    }
 
-//     pub fn node_index(&self, name: String) -> Option<usize> {
-//         self.names.iter().position(|s| s == &name)
-//     }
+    pub fn remove_edge(&mut self, from: usize, to: usize) -> bool {
+        self.children[from].remove(&to);
+        self.parents[to].remove(&from)
+    }
 
-//     pub fn push_node(&mut self, name: String) {
-//         self.names.push(name);
-//         self.parents.push(BTreeSet::default());
-//         self.children.push(BTreeSet::default());
-//     }
+    pub fn isolate(&mut self, node: usize) {
+        self.remove_edge(node, node);
 
-//     pub fn has_edge(&self, from: usize, to: usize) -> bool {
-//         assert!(to < self.len());
-//         self.children[from].contains(&to)
-//     }
+        for &child in &self.children[node] {
+            self.parents[child].remove(&node);
+        }
 
-//     pub fn add_edge(&mut self, from: usize, to: usize) -> bool {
-//         self.children[from].insert(to);
-//         self.parents[to].insert(from)
-//     }
+        for &parent in &self.parents[node] {
+            self.children[parent].remove(&node);
+        }
 
-//     pub fn remove_edge(&mut self, from: usize, to: usize) -> bool {
-//         self.children[from].remove(&to);
-//         self.parents[to].remove(&from)
-//     }
+        self.parents[node].clear();
+        self.children[node].clear();
+    }
 
-//     pub fn isolate(&mut self, node: usize) {
-//         self.remove_edge(node, node);
+    pub fn children(&self, from: usize) -> &BTreeSet<usize> {
+        &self.children[from]
+    }
 
-//         for &child in &self.children[node] {
-//             self.parents[child].remove(&node);
-//         }
+    pub fn parents(&self, from: usize) -> &BTreeSet<usize> {
+        &self.children[from]
+    }
 
-//         for &parent in &self.parents[node] {
-//             self.children[parent].remove(&node);
-//         }
+    pub fn all_edges(&self) -> impl '_ + Iterator<Item = (usize, usize)> {
+        self.children.iter().enumerate()
+            .flat_map(|(parent, children)| children.iter().map(
+                move |&child| (parent, child)
+            ))
+    }
 
-//         self.parents[node].clear();
-//         self.children[node].clear();
-//     }
+    pub fn ancestors(&self, nodes: Vec<usize>) -> Vec<usize> {
+        let mut result: BTreeSet<usize> = nodes.iter().copied().collect();
+        let mut to_check = nodes;
 
-//     pub fn children(&self, from: usize) -> &BTreeSet<usize> {
-//         &self.children[from]
-//     }
+        while let Some(x) = to_check.pop() {
+            for &y in self.parents(x) {
+                if result.contains(&y) { continue; }
+                result.insert(y);
+                to_check.push(y);
+            }
+        }
 
-//     pub fn parents(&self, from: usize) -> &BTreeSet<usize> {
-//         &self.children[from]
-//     }
+        result.into_iter().collect()
+    }
 
-//     pub fn all_edges(&self) -> impl '_ + Iterator<Item = (usize, usize)> {
-//         self.children.iter().enumerate().flat_map(|(parent, children)| children.iter().map(move |&child| (parent, child)))
-//     }
+    pub fn subgraph(self, names: Vec<usize>) -> Self {
+        let names: BTreeSet<usize> = names.into_iter().collect();
 
-//     pub fn reachable_from(&self, node: usize) -> HashSet<usize> {
-//         assert!(node < self.len());
+        Digraph {
+            names: self.names,
+            children: self.children.into_iter()
+                .enumerate()
+                .filter(|(x, _)| !names.contains(x))
+                .map(|(_, ys)| ys.into_iter().filter(|y| !names.contains(y)).collect())
+                .collect(),
+            parents: self.parents.into_iter()
+                .enumerate()
+                .filter(|(x, _)| !names.contains(x))
+                .map(|(_, ys)| ys.into_iter().filter(|y| !names.contains(y)).collect())
+                .collect()
+        }
+    }
 
-//         let mut result = HashSet::new();
-//         result.insert(node);
+    pub fn undirected(self) -> Graph {
+        Graph {
+            names: self.names,
+            neighbors: self.parents.iter().zip(self.children.iter())
+                .map(|(xs, ys)| xs.union(ys).copied().collect())
+                .collect()
+        }
+    }
+}
 
-//         let mut to_check = vec![node];
+impl Digraph {
+    pub fn erdos_renyi(size: usize, p: f64) -> Self {
+        let names = (0..size).map(|x| x.to_string()).collect();
+        let mut result = Digraph::unconnected(names);
 
-//         while let Some(x) = to_check.pop() {
-//             for &y in self.children(x) {
-//                 if result.insert(y) {
-//                     to_check.push(y);
-//                 }
-//             }
-//         }
+        for i in 0..size {
+            for j in (1 + i)..size {
+                if random::<f64>() < p {
+                    result.add_edge(i, j);
+                }
+            }
+        }
 
-//         result
-//     }
-// }
+        result
+    }
 
-// impl Digraph {
-//     pub fn topological_sort(&self) -> Option<Vec<usize>> {
-//         let mut graph = self.clone();
+    pub fn moralize(mut self) -> Self {
+        let mut to_check: BTreeSet<usize> = (0..self.len()).collect();
 
-//         let mut result = Vec::with_capacity(graph.len());
+        while let Some(&z) = to_check.first() {
+            to_check.remove(&z);
 
-//         let mut orphans = graph.parents.iter()
-//             .enumerate()
-//             .filter(|(_, parents)| parents.is_empty())
-//             .map(|(node, _)| node)
-//             .collect::<HashSet<_>>();
+            let parents = self.parents(z).iter().copied().collect::<Vec<_>>();
 
-//         while let Some(&x) = orphans.iter().next() {
-//             orphans.remove(&x);
-//             result.push(x);
+            for i in 0..parents.len() {
+                let x = parents[i];
+                for j in (i + 1)..parents.len() {
+                    let y = parents[j];
 
-            
-//             for &y in &graph.children[x] {
-//                 let parents = graph.parents(y);
+                    if !(self.has_edge(x, y) || self.has_edge(y, x)) {
+                        self.add_edge(x, y);
+                    }
+                }
+            }
+        }
 
-//                 if parents.len() == 1 {
-//                     orphans.insert(y.to_owned());
-//                 }
-//             }
+        self
+    }
 
-//             graph.isolate(x);
-//         }        
+    pub fn topological_sort(&self) -> Option<Vec<usize>> {
+        let mut graph = self.clone();
 
-//         if graph.all_edges().count() > 0 {
-//             None
-//         } else {
-//             Some(result)
-//         }
-//     }
+        let mut result = Vec::with_capacity(graph.len());
 
-//     pub fn is_acyclic(&self) -> bool {
-//         self.topological_sort().is_some()
-//     }
-// }
+        let mut orphans = graph.parents.iter()
+            .enumerate()
+            .filter(|(_, parents)| parents.is_empty())
+            .map(|(node, _)| node)
+            .collect::<HashSet<_>>();
 
-// impl Default for Digraph {
-//     fn default() -> Self { Digraph::unconnected(vec![]) }
-// }
+        while let Some(&x) = orphans.iter().next() {
+            orphans.remove(&x);
+            result.push(x);
+
+
+            for &y in &graph.children[x] {
+                let parents = graph.parents(y);
+
+                if parents.len() == 1 {
+                    orphans.insert(y.to_owned());
+                }
+            }
+
+            graph.isolate(x);
+        }
+
+        if graph.all_edges().count() > 0 {
+            None
+        } else {
+            Some(result)
+        }
+    }
+
+    pub fn d_separated(&self, x: usize, y: usize, zs: Vec<usize>) -> bool {
+        let ancestors: BTreeSet<_> = {
+            let mut nodes = zs.clone();
+            nodes.push(x);
+            nodes.push(y);
+            self.clone().ancestors(nodes).into_iter().collect()
+        };
+
+        let mut graph = self.clone();
+
+        for node in 0..graph.len() {
+            if ancestors.contains(&node) { continue; }
+            graph.isolate(node);
+        }
+
+
+        let mut graph = graph.moralize().undirected();
+
+        for &z in &zs {
+            graph.isolate(z);
+        }
+
+        !graph.connected(x, y)
+    }
+
+    pub fn is_acyclic(&self) -> bool {
+        self.topological_sort().is_some()
+    }
+}
+
+impl Default for Digraph {
+    fn default() -> Self { Digraph::unconnected(vec![]) }
+}

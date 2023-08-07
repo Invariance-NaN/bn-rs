@@ -1,4 +1,5 @@
 use std::collections::{HashMap, BTreeSet};
+use crate::graph::Digraph;
 
 struct Variable {
     name: String,
@@ -44,13 +45,13 @@ impl DataFrame {
         self._debug_check_integrity();
 
         assert!(row.len() == self.columns.len());
-        
+
         for (x, col) in row.into_iter().zip(self.columns.iter_mut()) {
             col.push(x);
         }
-        
+
         self.len += 1;
-        
+
     }
 
     pub fn len(&self) -> usize {
@@ -63,7 +64,7 @@ impl DataFrame {
         self._debug_check_integrity();
 
         let mut result = Vec::with_capacity(self.columns.len());
-        
+
         for col in &self.columns {
             result.push(*col.get(index)?);
         }
@@ -75,7 +76,7 @@ impl DataFrame {
         self._debug_check_integrity();
 
         let mut result: HashMap<Vec<u32>, DataFrame> = HashMap::new();
-        
+
         for row in self.iter() {
             let key = columns.iter().map(|&i| row[i]).collect::<Vec<_>>();
 
@@ -103,7 +104,7 @@ impl DataFrame {
         for (_, group) in self.group_by(zs) {
             let x_vals = group.iter().map(|row| row[x]).collect::<BTreeSet<_>>();
             let y_vals = group.iter().map(|row| row[y]).collect::<BTreeSet<_>>();
-            
+
             let mut result = 0_f64;
 
             for x_val in x_vals {
@@ -111,7 +112,7 @@ impl DataFrame {
                     let x_count  = group.iter().filter(|row| row[x] == x_val).count();
                     let y_count  = group.iter().filter(|row| row[y] == y_val).count();
                     let xy_count = group.iter().filter(|row| row[x] == x_val && row[y] == y_val).count();
-                    
+
                     let expected_xy_count = (x_count * y_count) as f64 / group.len() as f64;
 
                     let difference = xy_count as f64 - expected_xy_count;
@@ -120,10 +121,43 @@ impl DataFrame {
                 }
             }
 
-            if result >= 7.124 { return false; }
+            if result >= 1e8 { return false; }
         }
 
         return true;
+    }
+
+    pub fn fake_conditionally_independent(
+        &self,
+        x: usize,
+        y: usize,
+        zs: Vec<usize>,
+        graph: &Digraph
+    ) -> bool {
+        for (_, group) in self.group_by(&zs) {
+            let x_vals = group.iter().map(|row| row[x]).collect::<BTreeSet<_>>();
+            let y_vals = group.iter().map(|row| row[y]).collect::<BTreeSet<_>>();
+
+            let mut result = 0_f64;
+
+            for x_val in x_vals {
+                for &y_val in &y_vals {
+                    let x_count  = group.iter().filter(|row| row[x] == x_val).count();
+                    let y_count  = group.iter().filter(|row| row[y] == y_val).count();
+                    let xy_count = group.iter().filter(|row| row[x] == x_val && row[y] == y_val).count();
+
+                    let expected_xy_count = (x_count * y_count) as f64 / group.len() as f64;
+
+                    let difference = xy_count as f64 - expected_xy_count;
+
+                    result += (difference * difference) / expected_xy_count;
+                }
+            }
+
+            if result >= 1e12 { return true; }
+        }
+
+        return graph.d_separated(x, y, zs);
     }
 }
 
@@ -143,4 +177,3 @@ impl<'a> Iterator for Iter<'a> {
         result
     }
 }
-

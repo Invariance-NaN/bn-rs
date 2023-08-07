@@ -15,7 +15,7 @@ impl PMF {
             if rand < probability {
                 return outcome;
             }
-            
+
             rand -= probability;
         }
 
@@ -26,11 +26,38 @@ impl PMF {
 
 struct BayseianNetwork {
     graph: Digraph,
-    topological_sort: Option<Vec<usize>>,
+    topological_sort: Vec<usize>,
     pmfs: Vec<PMF>
 }
 
 impl BayseianNetwork {
-    
-}
+    pub fn new(graph: Digraph, pmfs: Vec<PMF>) -> BayseianNetwork {
+        assert!(graph.len() == pmfs.len());
 
+        let topological_sort = graph.topological_sort().unwrap();
+
+        BayseianNetwork { graph, topological_sort, pmfs }
+    }
+
+    pub fn len(&self) -> usize {
+        self.topological_sort.len()
+    }
+
+    pub fn sample(&self) -> Vec<u32> {
+        let mut result = vec![0; self.len()];
+
+        for &x in &self.topological_sort {
+            let parents = self.graph.parents(x);
+
+            let mut parent_values = Vec::with_capacity(parents.len());
+
+            for &y in parents {
+                parent_values.push(result[y]);
+            }
+
+            result[x] = self.pmfs[x].sample(parent_values);
+        }
+
+        result
+    }
+}
