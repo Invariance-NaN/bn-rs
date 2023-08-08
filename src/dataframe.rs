@@ -157,6 +157,7 @@ impl DataFrame {
             if result >= 1e12 { return true; }
         }
 
+    
         return graph.d_separated(x, y, zs);
     }
 }

@@ -73,7 +73,7 @@ fn shortcut_pc(data: DataFrame, answer: Digraph) -> Graph {
 
         for &z in graph_prime.neighbors(x) {
             for &v in graph_prime.neighbors(z) {
-                if v == z { continue; }
+                if v == x { continue; }
 
                 let r_v = graph_prime.component(v);
 
@@ -113,6 +113,7 @@ fn shortcut_pc(data: DataFrame, answer: Digraph) -> Graph {
                     let sep_set: Vec<_> = b.union(&u).copied().collect();
 
                     if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
+                        println!("Remove {} -- {}", x, y);
                         graph.remove_edge(x, y);
                         sep_sets.insert((x, y), sep_set.into_iter().collect());
                     }
@@ -129,54 +130,84 @@ fn shortcut_pc(data: DataFrame, answer: Digraph) -> Graph {
 }
 
 mod tests {
+    use super::*;
+    use std::time::Instant;
     use rand::prelude::*;
-
-    use crate::dataframe::DataFrame;
+    use crate::{dataframe::DataFrame, graph::{self, Digraph}};
 
     #[test]
-    fn bench() {
-        use super::*;
-        use std::time::Instant;
+    fn sanity() {
+        let nodes: Vec<_> = (0..3).map(|x| x.to_string()).collect();
 
-        for n in 2..15 {
-            for p in (0..=10).map(|x| x as f64 / 10.0) {
-
-                let graph = Digraph::erdos_renyi(n, p);
-
-            let data_1 = {
-            let mut result = DataFrame::new(
-                (0..graph.len()).map(|x| x.to_string()).collect()
-            );
-
-            let row = result.names().iter().map(|_| random::<u32>()).collect::<Vec<_>>();
-
-            for _ in 0..1000 {
-                result.add_row(row.clone());
-            }
-
-            result
+        let graph = {
+            let mut graph = Digraph::fully_connected(nodes.clone());
+            // graph.remove_edge(0, 1);
+            // graph.remove_edge(1, 0);
+            // graph.remove_edge(1, 2);
+            // graph.remove_edge(2, 1);
+            graph
         };
 
-        let data_2 = data_1.clone();
+        let df = {
+            let mut df = DataFrame::new(nodes.clone());
+            df.add_row(nodes.iter().map(|x| 0).collect());
+            df
+        };
+        
 
-        let graph_1 = graph.clone();
-        let graph_2 = graph;
+        let result_pc = pc(df.clone(), graph.clone());
+        let result_sc = shortcut_pc(df, graph);
 
-        let start_sc = Instant::now();
-        let result_2 = shortcut_pc(data_2, graph_1);
-        let sc_time = start_sc.elapsed();
+        dbg!(&result_pc);
+        dbg!(&result_sc);
 
-        let start_pc = Instant::now();
-        let result_1 = pc(data_1, graph_2);
-        let pc_time = start_pc.elapsed();
-
-
-        println!("======\nn:{}\np:{}\npc: {} ms\nsc: {} ms", n, p, pc_time.as_millis(), sc_time.as_millis());
-
-        eprintln!("{:?}", result_1);
-        eprintln!("{:?}", result_2);
-            }
-        }
-
+        assert_eq!(result_pc, result_sc);
     }
+
+    // #[test]
+    // fn bench() {
+    //     for n in 2..15 {
+    //         for p in (0..=10).map(|x| x as f64 / 10.0) {
+
+    //             let graph = Digraph::erdos_renyi(n, p);
+
+    //             let data_1 = {
+    //                 let mut result = DataFrame::new(
+    //                     (0..graph.len()).map(|x| x.to_string()).collect()
+    //                 );
+                
+    //                 let row = result.names().iter().map(|_| random::<u32>()).collect::<Vec<_>>();
+                
+    //                 for _ in 0..1000 {
+    //                     result.add_row(row.clone());
+    //                 }
+                
+    //                 result
+    //             };
+
+    //             let data_2 = data_1.clone();
+            
+    //             let graph_1 = graph.clone();
+    //             let graph_2 = graph.clone();
+            
+    //             let start_sc = Instant::now();
+    //             let result_sc = shortcut_pc(data_2, graph_1);
+    //             let sc_time = start_sc.elapsed();
+            
+    //             let start_pc = Instant::now();
+    //             let result_pc = pc(data_1, graph_2);
+    //             let pc_time = start_pc.elapsed();
+
+
+    //             println!("======\nn:{}\np:{}\npc: {} ms\nsc: {} ms", n, p, pc_time.as_millis(), sc_time.as_millis());
+
+    //             if result_pc != result_sc {
+    //                 println!("## NEQ ##");
+    //                 println!("actual: {a:?}\nactual-undirrected: {b:?}", b=graph.clone().undirected(),a=graph);
+    //                 println!("pc: {:?}", result_pc);
+    //                 println!("sc: {:?}", result_sc);
+    //             }
+    //         }
+    //     }
+    // }
 }

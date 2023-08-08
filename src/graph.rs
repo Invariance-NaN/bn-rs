@@ -2,7 +2,7 @@ use std::collections::{BTreeSet, HashSet};
 
 use rand::random;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 
 pub struct Graph {
     names: Vec<String>,
@@ -136,7 +136,7 @@ impl Graph {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Digraph {
     names: Vec<String>,
     children: Vec<BTreeSet<usize>>,
@@ -347,7 +347,10 @@ impl Digraph {
             graph.isolate(z);
         }
 
-        !graph.connected(x, y)
+        let result = !graph.connected(x, y);
+        dbg!((&self,x,y,&zs));
+        dbg!(result);
+        result
     }
 
     pub fn is_acyclic(&self) -> bool {
