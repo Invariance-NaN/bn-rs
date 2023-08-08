@@ -138,9 +138,12 @@ mod tests {
         use super::*;
         use std::time::Instant;
 
-        let graph = Digraph::erdos_renyi(50, 0.1);
+        for n in 2..15 {
+            for p in (0..=10).map(|x| x as f64 / 10.0) {
 
-        let data_1 = {
+                let graph = Digraph::erdos_renyi(n, p);
+
+            let data_1 = {
             let mut result = DataFrame::new(
                 (0..graph.len()).map(|x| x.to_string()).collect()
             );
@@ -168,10 +171,12 @@ mod tests {
         let pc_time = start_pc.elapsed();
 
 
-        println!("pc: {} ms\nsc: {} ms", pc_time.as_millis(), sc_time.as_millis());
+        println!("======\nn:{}\np:{}\npc: {} ms\nsc: {} ms", n, p, pc_time.as_millis(), sc_time.as_millis());
 
-        println!("{:?}", result_1);
-        println!("{:?}", result_2);
+        eprintln!("{:?}", result_1);
+        eprintln!("{:?}", result_2);
+            }
+        }
 
     }
 }

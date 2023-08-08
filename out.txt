@@ -1,0 +1,509 @@
+
+running 2 tests
+test tests::it_works ... ok
+======
+n:2
+p:0
+pc: 0 ms
+sc: 0 ms
+======
+n:2
+p:0.1
+pc: 0 ms
+sc: 0 ms
+======
+n:2
+p:0.2
+pc: 0 ms
+sc: 0 ms
+======
+n:2
+p:0.3
+pc: 0 ms
+sc: 1 ms
+======
+n:2
+p:0.4
+pc: 0 ms
+sc: 0 ms
+======
+n:2
+p:0.5
+pc: 0 ms
+sc: 0 ms
+======
+n:2
+p:0.6
+pc: 0 ms
+sc: 0 ms
+======
+n:2
+p:0.7
+pc: 1 ms
+sc: 0 ms
+======
+n:2
+p:0.8
+pc: 0 ms
+sc: 1 ms
+======
+n:2
+p:0.9
+pc: 1 ms
+sc: 1 ms
+======
+n:2
+p:1
+pc: 0 ms
+sc: 1 ms
+======
+n:3
+p:0
+pc: 5 ms
+sc: 3 ms
+======
+n:3
+p:0.1
+pc: 7 ms
+sc: 3 ms
+======
+n:3
+p:0.2
+pc: 5 ms
+sc: 3 ms
+======
+n:3
+p:0.3
+pc: 6 ms
+sc: 2 ms
+======
+n:3
+p:0.4
+pc: 4 ms
+sc: 3 ms
+======
+n:3
+p:0.5
+pc: 6 ms
+sc: 2 ms
+======
+n:3
+p:0.6
+pc: 7 ms
+sc: 8 ms
+======
+n:3
+p:0.7
+pc: 5 ms
+sc: 3 ms
+======
+n:3
+p:0.8
+pc: 7 ms
+sc: 3 ms
+======
+n:3
+p:0.9
+pc: 7 ms
+sc: 10 ms
+======
+n:3
+p:1
+pc: 7 ms
+sc: 9 ms
+======
+n:4
+p:0
+pc: 27 ms
+sc: 7 ms
+======
+n:4
+p:0.1
+pc: 25 ms
+sc: 6 ms
+======
+n:4
+p:0.2
+pc: 25 ms
+sc: 11 ms
+======
+n:4
+p:0.3
+pc: 25 ms
+sc: 6 ms
+======
+n:4
+p:0.4
+pc: 25 ms
+sc: 6 ms
+======
+n:4
+p:0.5
+pc: 25 ms
+sc: 8 ms
+======
+n:4
+p:0.6
+pc: 24 ms
+sc: 7 ms
+======
+n:4
+p:0.7
+pc: 23 ms
+sc: 7 ms
+======
+n:4
+p:0.8
+pc: 25 ms
+sc: 15 ms
+======
+n:4
+p:0.9
+pc: 28 ms
+sc: 14 ms
+======
+n:4
+p:1
+pc: 27 ms
+sc: 21 ms
+======
+n:5
+p:0
+pc: 95 ms
+sc: 11 ms
+======
+n:5
+p:0.1
+pc: 95 ms
+sc: 12 ms
+======
+n:5
+p:0.2
+pc: 96 ms
+sc: 12 ms
+======
+n:5
+p:0.3
+pc: 97 ms
+sc: 19 ms
+======
+n:5
+p:0.4
+pc: 92 ms
+sc: 26 ms
+======
+n:5
+p:0.5
+pc: 99 ms
+sc: 38 ms
+======
+n:5
+p:0.6
+pc: 97 ms
+sc: 30 ms
+======
+n:5
+p:0.7
+pc: 95 ms
+sc: 29 ms
+======
+n:5
+p:0.8
+pc: 91 ms
+sc: 29 ms
+======
+n:5
+p:0.9
+pc: 98 ms
+sc: 50 ms
+======
+n:5
+p:1
+pc: 111 ms
+sc: 45 ms
+======
+n:6
+p:0
+pc: 323 ms
+sc: 23 ms
+======
+n:6
+p:0.1
+pc: 312 ms
+sc: 18 ms
+======
+n:6
+p:0.2
+pc: 306 ms
+sc: 24 ms
+======
+n:6
+p:0.3
+pc: 312 ms
+sc: 45 ms
+======
+n:6
+p:0.4
+pc: 346 ms
+sc: 21 ms
+======
+n:6
+p:0.5
+pc: 315 ms
+sc: 36 ms
+======
+n:6
+p:0.6
+pc: 341 ms
+sc: 44 ms
+======
+n:6
+p:0.7
+pc: 316 ms
+sc: 64 ms
+======
+n:6
+p:0.8
+pc: 318 ms
+sc: 77 ms
+======
+n:6
+p:0.9
+pc: 318 ms
+sc: 72 ms
+======
+n:6
+p:1
+pc: 315 ms
+sc: 79 ms
+======
+n:7
+p:0
+pc: 1018 ms
+sc: 30 ms
+======
+n:7
+p:0.1
+pc: 1050 ms
+sc: 52 ms
+======
+n:7
+p:0.2
+pc: 1030 ms
+sc: 48 ms
+======
+n:7
+p:0.3
+pc: 983 ms
+sc: 59 ms
+======
+n:7
+p:0.4
+pc: 1006 ms
+sc: 57 ms
+======
+n:7
+p:0.5
+pc: 1008 ms
+sc: 104 ms
+======
+n:7
+p:0.6
+pc: 1110 ms
+sc: 131 ms
+======
+n:7
+p:0.7
+pc: 981 ms
+sc: 110 ms
+======
+n:7
+p:0.8
+pc: 1077 ms
+sc: 118 ms
+======
+n:7
+p:0.9
+pc: 1029 ms
+sc: 132 ms
+======
+n:7
+p:1
+pc: 987 ms
+sc: 138 ms
+======
+n:8
+p:0
+pc: 3052 ms
+sc: 49 ms
+======
+n:8
+p:0.1
+pc: 3125 ms
+sc: 54 ms
+======
+n:8
+p:0.2
+pc: 3055 ms
+sc: 124 ms
+======
+n:8
+p:0.3
+pc: 3200 ms
+sc: 80 ms
+======
+n:8
+p:0.4
+pc: 3146 ms
+sc: 121 ms
+======
+n:8
+p:0.5
+pc: 3108 ms
+sc: 131 ms
+======
+n:8
+p:0.6
+pc: 3223 ms
+sc: 194 ms
+======
+n:8
+p:0.7
+pc: 2983 ms
+sc: 159 ms
+======
+n:8
+p:0.8
+pc: 3087 ms
+sc: 222 ms
+======
+n:8
+p:0.9
+pc: 3103 ms
+sc: 209 ms
+======
+n:8
+p:1
+pc: 3108 ms
+sc: 237 ms
+test structure_learning::pc::tests::bench has been running for over 60 seconds
+======
+n:9
+p:0
+pc: 8191 ms
+sc: 67 ms
+======
+n:9
+p:0.1
+pc: 8494 ms
+sc: 68 ms
+======
+n:9
+p:0.2
+pc: 8444 ms
+sc: 139 ms
+======
+n:9
+p:0.3
+pc: 8431 ms
+sc: 105 ms
+======
+n:9
+p:0.4
+pc: 8728 ms
+sc: 126 ms
+======
+n:9
+p:0.5
+pc: 8533 ms
+sc: 178 ms
+======
+n:9
+p:0.6
+pc: 8441 ms
+sc: 222 ms
+======
+n:9
+p:0.7
+pc: 8475 ms
+sc: 304 ms
+======
+n:9
+p:0.8
+pc: 8368 ms
+sc: 427 ms
+======
+n:9
+p:0.9
+pc: 8587 ms
+sc: 348 ms
+======
+n:9
+p:1
+pc: 8550 ms
+sc: 358 ms
+======
+n:10
+p:0
+pc: 23148 ms
+sc: 95 ms
+======
+n:10
+p:0.1
+pc: 22319 ms
+sc: 130 ms
+======
+n:10
+p:0.2
+pc: 22596 ms
+sc: 208 ms
+======
+n:10
+p:0.3
+pc: 21708 ms
+sc: 373 ms
+======
+n:10
+p:0.4
+pc: 21949 ms
+sc: 430 ms
+======
+n:10
+p:0.5
+pc: 22766 ms
+sc: 454 ms
+======
+n:10
+p:0.6
+pc: 21792 ms
+sc: 485 ms
+======
+n:10
+p:0.7
+pc: 21998 ms
+sc: 460 ms
+======
+n:10
+p:0.8
+pc: 21306 ms
+sc: 455 ms
+======
+n:10
+p:0.9
+pc: 22648 ms
+sc: 498 ms
+======
+n:10
+p:1
+pc: 22028 ms
+sc: 557 ms
+======
+n:11
+p:0
+pc: 54541 ms
+sc: 102 ms
+======
+n:11
+p:0.1
+pc: 54235 ms
+sc: 120 ms
