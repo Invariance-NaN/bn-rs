@@ -8,7 +8,9 @@ fn orient_edges(graph: &mut Graph, sep_sets: &SeperationSets) {
 
 }
 
-fn pc(data: DataFrame, answer: Digraph) -> Graph {
+fn pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
+    let mut ci_tests = 0;
+
     let mut graph = Graph::fully_connected(data.names().clone());
 
     let mut indices: HashSet<usize> = (0..graph.len()).collect();
@@ -25,6 +27,7 @@ fn pc(data: DataFrame, answer: Digraph) -> Graph {
                 for zs in combinations(n, indices.iter().collect()) {
                     let zs: Vec<_> = zs.into_iter().copied().collect();
 
+                    ci_tests += 1;
                     if data.fake_conditionally_independent(x, y, zs.clone(), &answer) {
                         graph.remove_edge(x, y);
                         graph.remove_edge(y, x);
@@ -41,11 +44,13 @@ fn pc(data: DataFrame, answer: Digraph) -> Graph {
 
     orient_edges(&mut graph, &sep_sets);
 
-    return graph;
+    return (graph, ci_tests);
 }
 
 
-fn shortcut_pc(data: DataFrame, answer: Digraph) -> Graph {
+fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
+    let mut ci_tests = 0;
+
     fn sbc(graph: &Graph, x: usize, y: usize)
         -> (HashSet<usize>, HashSet<usize>, HashSet<usize>)
     {
@@ -112,6 +117,7 @@ fn shortcut_pc(data: DataFrame, answer: Digraph) -> Graph {
 
                     let sep_set: Vec<_> = b.union(&u).copied().collect();
 
+                    ci_tests += 1;
                     if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
                         println!("Remove {} -- {}", x, y);
                         graph.remove_edge(x, y);
@@ -126,7 +132,7 @@ fn shortcut_pc(data: DataFrame, answer: Digraph) -> Graph {
 
     orient_edges(&mut graph, &sep_sets);
 
-    return graph;
+    return (graph, ci_tests);
 }
 
 mod tests {
