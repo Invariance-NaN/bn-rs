@@ -348,8 +348,6 @@ impl Digraph {
         }
 
         let result = !graph.connected(x, y);
-        dbg!((&self,x,y,&zs));
-        dbg!(result);
         result
     }
 
