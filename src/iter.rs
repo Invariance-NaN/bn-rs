@@ -1,9 +1,10 @@
-use std::borrow::BorrowMut;
+use std::{borrow::BorrowMut, result};
 
 pub fn combinations<T: Copy>(n: usize, xs: Vec<T>) -> Combinations<T> {
     Combinations { n, xs, indices: None }
 }
 
+#[derive(Clone)]
 pub struct Combinations<T> {
     n: usize,
     xs: Vec<T>,
@@ -43,3 +44,46 @@ impl<T: Copy> Iterator for Combinations<T> {
         }
     }
 }
+
+
+pub fn interleave<T, Xs: Iterator<Item = T>, Ys: Iterator<Item = T>>(xs: Xs, ys: Ys) -> Interleave<T, Xs, Ys> {
+    Interleave { xs, ys, state: InterleaveState::XsNext }
+}
+
+#[derive(Clone, Copy)]
+enum InterleaveState {
+    XsNext,
+    YsNext,
+    Done
+}
+
+#[derive(Clone, Copy)]
+pub struct Interleave<T, Xs: Iterator<Item = T>, Ys: Iterator<Item = T>> {
+    xs: Xs,
+    ys: Ys,
+    state: InterleaveState
+}
+
+impl<T, Xs: Iterator<Item = T>, Ys: Iterator<Item = T>> Iterator for Interleave<T, Xs, Ys> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use InterleaveState::{XsNext, YsNext, Done};
+
+        let item = match self.state {
+            XsNext => self.xs.next(),
+            YsNext => self.ys.next(),
+            Done => None
+        };
+
+        self.state = match (self.state, &item) {
+            (_, None) => Done,
+            (Done, _) => Done,
+            (XsNext, _) => YsNext,
+            (YsNext, _) => XsNext
+        };
+
+        item
+    }
+}
+

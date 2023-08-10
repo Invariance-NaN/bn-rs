@@ -133,6 +133,10 @@ impl Graph {
 
         false
     }
+
+    pub fn degree(&self, node: usize) -> usize {
+        self.neighbors(node).len()
+    }
 }
 
 
@@ -199,7 +203,7 @@ impl Digraph {
     }
 
     pub fn parents(&self, from: usize) -> &BTreeSet<usize> {
-        &self.children[from]
+        &self.parents[from]
     }
 
     pub fn all_edges(&self) -> impl '_ + Iterator<Item = (usize, usize)> {

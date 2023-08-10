@@ -1,27 +1,33 @@
 use std::collections::{HashSet, HashMap};
 
-use crate::{graph::{Graph, Digraph}, dataframe::DataFrame, iter::combinations};
+use crate::{graph::{Graph, Digraph}, dataframe::DataFrame, iter::{combinations, interleave}};
 
 type SeperationSets = HashMap<(usize, usize), HashSet<usize>>;
+
+fn dual_iter(min: usize, max: usize) -> impl Iterator<Item = usize> {
+    //! Yields max, min, max - 1, min + 1, ...
+
+    interleave((min..=max).rev(), min..=max).take(max - min + 1)
+}
 
 fn orient_edges(graph: &mut Graph, sep_sets: &SeperationSets) {
 
 }
 
-fn pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
+pub fn pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut ci_tests = 0;
 
     let mut graph = Graph::fully_connected(data.names().clone());
-
     let mut indices: HashSet<usize> = (0..graph.len()).collect();
-
     let mut sep_sets: SeperationSets = HashMap::new();
 
-    for n in 0..=(graph.len() - 2) {
+    for n in 0..=graph.len() - 2 {
         for x in 0..graph.len() {
             indices.remove(&x);
 
             for y in (x + 1)..graph.len() {
+                if !graph.has_edge(x, y) { continue; }
+
                 indices.remove(&y);
 
                 for zs in combinations(n, indices.iter().collect()) {
@@ -47,84 +53,117 @@ fn pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     return (graph, ci_tests);
 }
 
-
-fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
+pub fn pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut ci_tests = 0;
 
-    fn sbc(graph: &Graph, x: usize, y: usize)
-        -> (HashSet<usize>, HashSet<usize>, HashSet<usize>)
-    {
-        let (mut s, mut b, mut c) = {
-            let mut b = (0..graph.len()).collect::<HashSet<_>>();
-            b.remove(&x);
-            b.remove(&y);
-            (HashSet::new(), b.clone(), b)
-        };
-
-        let mut graph_prime = graph.clone();
-
-        for z in graph.neighbors(x).intersection(graph.neighbors(y)) {
-            let r = graph.component(*z);
-            c.retain(|x| !r.contains(&x));
-
-            s = s.union(&r.intersection(
-                &graph.neighbors(x).iter().copied().collect()
-            ).copied().collect()).copied().collect();
-
-            for x in r {
-                graph_prime.isolate(x);
-            }
-        }
-
-        for &z in graph_prime.neighbors(x) {
-            for &v in graph_prime.neighbors(z) {
-                if v == x { continue; }
-                if z == y || v == y { continue; }
-
-                let r_v = graph_prime.component(v);
-
-                if r_v.into_iter().any(|w| graph_prime.has_edge(w, z)) {
-                    b.insert(z);
-                    b.insert(v);
-                }
-            }
-        }
-
-        (s, b, c)
-    }
-
     let mut graph = Graph::fully_connected(data.names().clone());
-
     let mut indices: HashSet<usize> = (0..graph.len()).collect();
-
     let mut sep_sets: SeperationSets = HashMap::new();
 
+    for n in dual_iter(0, graph.len() - 2) {
+        for x in 0..graph.len() {
+            indices.remove(&x);
 
-    for m in 0..=graph.len() - 2 {
-    // for m in (0..=graph.len() - 2).map(
-    //     |x| if x & 1 == 0 { graph.len() - 2 - x >> 1 } else { x >> 1 }
-    // ).collect::<Vec<_>>() {
-    //     dbg!(graph.max_degree());
-    //     dbg!(graph.min_degree());
+            for y in (x + 1)..graph.len() {
+                if !graph.has_edge(x, y) { continue; }
 
-        // if m + 1 > graph.max_degree() || m + 1 < graph.min_degree() { continue; }
+                indices.remove(&y);
 
+                for zs in combinations(n, indices.iter().collect()) {
+                    let zs: Vec<_> = zs.into_iter().copied().collect();
+
+                    ci_tests += 1;
+                    if data.fake_conditionally_independent(x, y, zs.clone(), &answer) {
+                        graph.remove_edge(x, y);
+                        graph.remove_edge(y, x);
+                        sep_sets.insert((x, y), zs.into_iter().collect());
+                    }
+                }
+
+                indices.insert(y);
+            }
+
+            indices.insert(x);
+        }
+    }
+
+    orient_edges(&mut graph, &sep_sets);
+
+    return (graph, ci_tests);
+}
+
+fn sbc(graph: &Graph, x: usize, y: usize) -> (HashSet<usize>, HashSet<usize>, HashSet<usize>) {
+    let (mut s, mut b, mut c) = {
+        let mut c = (0..graph.len()).collect::<HashSet<_>>();
+        c.remove(&x);
+        c.remove(&y);
+        (HashSet::new(), HashSet::new(), c)
+    };
+
+    let mut graph_prime = graph.clone();
+    graph_prime.isolate(x);
+    graph_prime.isolate(y);
+
+    for z in graph.neighbors(x).intersection(graph.neighbors(y)) {
+        let r = graph_prime.component(*z);
+        c.retain(|w| !r.contains(&w));
+
+        s = s.union(&r.intersection(
+            &graph.neighbors(x).iter().copied().collect()
+        ).copied().collect()).copied().collect();
+
+        for w in r {
+            graph_prime.isolate(w);
+        }
+    }
+
+    for &z in graph.neighbors(x) {
+        if graph_prime.degree(z) > 0 {
+            graph_prime.add_edge(x, z);
+        }
+    }
+
+    for &z in graph.neighbors(y) {
+        if graph_prime.degree(z) > 0 {
+            graph_prime.add_edge(x, y);
+        }
+    }
+
+
+    for &z in graph_prime.neighbors(x) {
+        for &v in graph_prime.neighbors(z) {
+            if v == x { continue; }
+
+            let r_v = graph_prime.component(v);
+
+            if r_v.into_iter().any(|w| graph.has_edge(w, z)) {
+                b.insert(z);
+                b.insert(v);
+            }
+        }
+    }
+
+    (s, b, c)
+}
+
+
+pub fn shortcut_pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
+    let mut ci_tests = 0;
+
+    let mut graph = Graph::fully_connected(data.names().clone());
+    let mut indices: HashSet<usize> = (0..graph.len()).collect();
+    let mut sep_sets: SeperationSets = HashMap::new();
+
+    for m in dual_iter(0, graph.len() - 2) {
+        if m > graph.max_degree() { continue; }
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
-                let (s, b, _c) = sbc(&graph, x, y);
+                let (s, b, c) = sbc(&graph, x, y);
 
-                let mut s = s;
-                s.remove(&x);
-                s.remove(&y);
-                let s = s;
-
-                for u in combinations(m, s.iter().collect()) {
+                if b.len() > m { continue; }
+                for u in combinations(m - b.len(), s.iter().collect()) {
                     let u = u.into_iter().copied().collect();
-
                     let sep_set: Vec<_> = b.union(&u).copied().collect();
-
-                    assert!(!sep_set.contains(&x));
-                    assert!(!sep_set.contains(&y));
 
                     ci_tests += 1;
                     if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
@@ -143,86 +182,146 @@ fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     return (graph, ci_tests);
 }
 
+
+pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
+    let mut ci_tests = 0;
+   
+    let mut graph = Graph::fully_connected(data.names().clone());
+    let mut indices: HashSet<usize> = (0..graph.len()).collect();
+    let mut sep_sets: SeperationSets = HashMap::new();
+
+
+    for m in dual_iter(0, graph.len() - 2) {
+        for x in 0..graph.len() {
+            for y in graph.neighbors(x).clone() {
+                let (s, b, c) = sbc(&graph, x, y);
+
+                if b.len() > m { continue; }
+                for u in combinations(m - b.len(), s.iter().collect()) {
+                    let u = u.into_iter().copied().collect();
+                    let sep_set: Vec<_> = b.union(&u).copied().collect();
+            
+                    ci_tests += 1;
+                    if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
+                        graph.remove_edge(x, y);
+                        sep_sets.insert((x, y), sep_set.into_iter().collect());
+                    }
+                }
+            }
+
+            indices.insert(x);
+        }
+    }
+
+    orient_edges(&mut graph, &sep_sets);
+
+    return (graph, ci_tests);
+}
+
+
+
 mod tests {
     use super::*;
     use std::time::Instant;
     use rand::prelude::*;
     use crate::{dataframe::DataFrame, graph::{self, Digraph}};
 
-    #[test]
+    // #[test]
     fn sanity() {
-        let nodes: Vec<_> = (0..4).map(|x| x.to_string()).collect();
+        let nodes: Vec<_> = (0..5).map(|x| x.to_string()).collect();
 
         let graph = {
             let mut graph = Digraph::unconnected(nodes.clone());
             graph.add_edge(0, 1);
-            graph.add_edge(0, 2);
-            graph.add_edge(1, 3);
+            graph.add_edge(0, 4);
+            graph.add_edge(1, 2);
             graph.add_edge(2, 3);
+            // graph.add_edge(0, 2);
+            // graph.add_edge(2, 3);
             graph
         };
 
         let df = {
             let mut df = DataFrame::new(nodes.clone());
-            df.add_row(nodes.iter().map(|x| 0).collect());
+            df.add_row(nodes.iter().map(|_| 0).collect());
             df
         };
 
 
         let (result_pc, _ci_pc) = pc(df.clone(), graph.clone());
         let (result_sc, _ci_sc) = shortcut_pc(df, graph);
-
         assert_eq!(result_pc, result_sc);
     }
 
     #[test]
     fn bench() {
-        for n in 2..15 {
+        println!("[");
+        for n in [15] {
             for p in (0..=10).map(|x| x as f64 / 10.0) {
+                println!("{{");
+                println!("n: {}, p: {},",n,p);
+                println!("results: [");
+                for _ in 0..100 {
+                    let graph = Digraph::erdos_renyi(n, p);
 
-                let graph = Digraph::erdos_renyi(n, p);
+                    let data_1 = {
+                        let mut result = DataFrame::new(
+                            (0..graph.len()).map(|x| x.to_string()).collect()
+                        );
 
-                let data_1 = {
-                    let mut result = DataFrame::new(
-                        (0..graph.len()).map(|x| x.to_string()).collect()
-                    );
+                        let row = result.names().iter().map(|_| random::<u32>()).collect::<Vec<_>>();
 
-                    let row = result.names().iter().map(|_| random::<u32>()).collect::<Vec<_>>();
+                        for _ in 0..1000 {
+                            result.add_row(row.clone());
+                        }
 
-                    for _ in 0..1000 {
-                        result.add_row(row.clone());
+                        result
+                    };
+
+                    let data_2 = data_1.clone();
+                    let data_3 = data_1.clone();
+                    let data_4 = data_1.clone();
+
+                    let graph_1 = graph.clone();
+                    let graph_2 = graph.clone();
+                    let graph_3 = graph.clone();
+                    let graph_4 = graph.clone();
+
+                    let start_pc = Instant::now();
+                    let (result_pc, ci_pc) = pc(data_1, graph_1);
+                    let pc_time = start_pc.elapsed();
+
+                    let start_sc = Instant::now();
+                    let (result_sc, ci_sc) = shortcut_pc(data_2, graph_2);
+                    let sc_time = start_sc.elapsed();
+                    
+                    let start_pd = Instant::now();
+                    let (result_pd, ci_pd) = pc_dual(data_3, graph_3);
+                    let pd_time = start_pd.elapsed();
+
+                    let start_sd = Instant::now();
+                    let (result_sd, ci_sd) = shortcut_pc_dual(data_4, graph_4);
+                    let sd_time = start_sd.elapsed();
+
+                    println!("{{");
+                    println!("pc: {{ms: {}, ci: {}}}", pc_time.as_millis(), ci_pc);
+                    println!("sc: {{ms: {}, ci: {}}}", sc_time.as_millis(), ci_sc);
+                    println!("pd: {{ms: {}, ci: {}}}", pd_time.as_millis(), ci_pd);
+                    println!("sd: {{ms: {}, ci: {}}}", sd_time.as_millis(), ci_sd);
+                    println!("}}");
+
+                    if result_pc != result_sc || result_pc != result_pd || result_pc != result_sd {
+                        println!("## NEQ ##");
+                        println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
+                        println!("pc: {:?}", result_pc);
+                        println!("sc: {:?}", result_sc);
+                        println!("pd: {:?}", result_pd);
+                        println!("sd: {:?}", result_sd);
                     }
-
-                    result
-                };
-
-                let data_2 = data_1.clone();
-
-                let graph_1 = graph.clone();
-                let graph_2 = graph.clone();
-
-                let start_sc = Instant::now();
-                let (result_sc, ci_sc) = shortcut_pc(data_2, graph_1);
-                let sc_time = start_sc.elapsed();
-
-                let start_pc = Instant::now();
-                let (result_pc, ci_pc) = pc(data_1, graph_2);
-                let pc_time = start_pc.elapsed();
-
-                println!("======");
-                println!("n: {}", n);
-                println!("p: {}", p);
-                println!("pc: {} ms, {} ci", pc_time.as_millis(), ci_pc);
-                println!("sc: {} ms, {} ci", sc_time.as_millis(), ci_sc);
-
-
-                if result_pc != result_sc {
-                    println!("## NEQ ##");
-                    println!("actual: {a:?}\nactual-undirrected: {b:?}", b=graph.clone().undirected(),a=graph);
-                    println!("pc: {:?}", result_pc);
-                    println!("sc: {:?}", result_sc);
                 }
+                println!("] }}");
             }
         }
+        println!("]");
     }
 }
