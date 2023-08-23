@@ -1,7 +1,7 @@
 use std::collections::{HashMap, BTreeSet};
 use crate::graph::Digraph;
 
-struct Variable {
+pub struct Variable {
     name: String,
     values: usize
 }

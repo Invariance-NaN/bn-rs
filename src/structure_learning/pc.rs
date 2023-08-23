@@ -1,4 +1,5 @@
 use std::collections::{HashSet, HashMap};
+use rayon::prelude::*;
 
 use crate::{graph::{Graph, Digraph}, dataframe::DataFrame, iter::{combinations, interleave}};
 
@@ -22,6 +23,8 @@ pub fn pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut sep_sets: SeperationSets = HashMap::new();
 
     for n in 0..=graph.len() - 2 {
+        if n > graph.max_degree() { continue; }
+
         for x in 0..graph.len() {
             indices.remove(&x);
 
@@ -61,6 +64,8 @@ pub fn pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut sep_sets: SeperationSets = HashMap::new();
 
     for n in dual_iter(0, graph.len() - 2) {
+        if n > graph.max_degree() { continue; }
+
         for x in 0..graph.len() {
             indices.remove(&x);
 
@@ -156,6 +161,7 @@ pub fn shortcut_pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
     for m in dual_iter(0, graph.len() - 2) {
         if m > graph.max_degree() { continue; }
+
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
                 let (s, b, c) = sbc(&graph, x, y);
@@ -191,10 +197,16 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut sep_sets: SeperationSets = HashMap::new();
 
 
-    for m in dual_iter(0, graph.len() - 2) {
+    for m in 0..=graph.len() - 2 {
+        if m > graph.max_degree() { continue; }
+
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
                 let (s, b, c) = sbc(&graph, x, y);
+
+                if x == 2 && y == 4 {
+                    print!("");
+                }
 
                 if b.len() > m { continue; }
                 for u in combinations(m - b.len(), s.iter().collect()) {
@@ -226,18 +238,23 @@ mod tests {
     use rand::prelude::*;
     use crate::{dataframe::DataFrame, graph::{self, Digraph}};
 
-    // #[test]
+    #[test]
     fn sanity() {
-        let nodes: Vec<_> = (0..5).map(|x| x.to_string()).collect();
+        let nodes: Vec<_> = (0..6).map(|x| x.to_string()).collect();
 
         let graph = {
             let mut graph = Digraph::unconnected(nodes.clone());
             graph.add_edge(0, 1);
-            graph.add_edge(0, 4);
-            graph.add_edge(1, 2);
+            graph.add_edge(0, 2);
+            graph.add_edge(1, 4);
             graph.add_edge(2, 3);
+            graph.add_edge(4, 5);
+            // 0..5:
             // graph.add_edge(0, 2);
-            // graph.add_edge(2, 3);
+            // graph.add_edge(0, 3);
+            // graph.add_edge(1, 3);
+            // graph.add_edge(1, 4);
+            // graph.add_edge(2, 4);
             graph
         };
 
@@ -249,79 +266,20 @@ mod tests {
 
 
         let (result_pc, _ci_pc) = pc(df.clone(), graph.clone());
-        let (result_sc, _ci_sc) = shortcut_pc(df, graph);
+        let (result_sc, _ci_sc) = shortcut_pc(df.clone(), graph.clone());
+        let (result_pd, _ci_pd) = pc_dual(df.clone(), graph.clone());
+        let (result_sd, _ci_sd) = shortcut_pc_dual(df.clone(), graph.clone());
+
+        println!("===========");
+        println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
+        println!("pc: {:?}", result_pc);
+        println!("sc: {:?}", result_sc);
+        println!("pd: {:?}", result_pd);
+        println!("sd: {:?}", result_sd);
+
+        assert_eq!(result_pc, graph.clone().undirected());
         assert_eq!(result_pc, result_sc);
-    }
-
-    #[test]
-    fn bench() {
-        println!("[");
-        for n in [15] {
-            for p in (0..=10).map(|x| x as f64 / 10.0) {
-                println!("{{");
-                println!("n: {}, p: {},",n,p);
-                println!("results: [");
-                for _ in 0..100 {
-                    let graph = Digraph::erdos_renyi(n, p);
-
-                    let data_1 = {
-                        let mut result = DataFrame::new(
-                            (0..graph.len()).map(|x| x.to_string()).collect()
-                        );
-
-                        let row = result.names().iter().map(|_| random::<u32>()).collect::<Vec<_>>();
-
-                        for _ in 0..1000 {
-                            result.add_row(row.clone());
-                        }
-
-                        result
-                    };
-
-                    let data_2 = data_1.clone();
-                    let data_3 = data_1.clone();
-                    let data_4 = data_1.clone();
-
-                    let graph_1 = graph.clone();
-                    let graph_2 = graph.clone();
-                    let graph_3 = graph.clone();
-                    let graph_4 = graph.clone();
-
-                    let start_pc = Instant::now();
-                    let (result_pc, ci_pc) = pc(data_1, graph_1);
-                    let pc_time = start_pc.elapsed();
-
-                    let start_sc = Instant::now();
-                    let (result_sc, ci_sc) = shortcut_pc(data_2, graph_2);
-                    let sc_time = start_sc.elapsed();
-                    
-                    let start_pd = Instant::now();
-                    let (result_pd, ci_pd) = pc_dual(data_3, graph_3);
-                    let pd_time = start_pd.elapsed();
-
-                    let start_sd = Instant::now();
-                    let (result_sd, ci_sd) = shortcut_pc_dual(data_4, graph_4);
-                    let sd_time = start_sd.elapsed();
-
-                    println!("{{");
-                    println!("pc: {{ms: {}, ci: {}}}", pc_time.as_millis(), ci_pc);
-                    println!("sc: {{ms: {}, ci: {}}}", sc_time.as_millis(), ci_sc);
-                    println!("pd: {{ms: {}, ci: {}}}", pd_time.as_millis(), ci_pd);
-                    println!("sd: {{ms: {}, ci: {}}}", sd_time.as_millis(), ci_sd);
-                    println!("}}");
-
-                    if result_pc != result_sc || result_pc != result_pd || result_pc != result_sd {
-                        println!("## NEQ ##");
-                        println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
-                        println!("pc: {:?}", result_pc);
-                        println!("sc: {:?}", result_sc);
-                        println!("pd: {:?}", result_pd);
-                        println!("sd: {:?}", result_sd);
-                    }
-                }
-                println!("] }}");
-            }
-        }
-        println!("]");
+        assert_eq!(result_pc, result_pd);
+        assert_eq!(result_pc, result_sd);
     }
 }

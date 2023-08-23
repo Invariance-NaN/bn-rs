@@ -3,7 +3,7 @@ use rand::prelude::*;
 
 use crate::graph::Digraph;
 
-struct PMF {
+pub struct PMF {
     table: HashMap<Vec<u32>, Vec<(u32, f64)>>
 }
 
@@ -24,7 +24,7 @@ impl PMF {
     }
 }
 
-struct BayseianNetwork {
+pub struct BayseianNetwork {
     graph: Digraph,
     topological_sort: Vec<usize>,
     pmfs: Vec<PMF>
