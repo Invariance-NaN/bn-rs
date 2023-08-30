@@ -17,4 +17,4 @@ Data sets:
 | CHILD        | Done   |
 | ...          | ...    |
 
-![benchmarks](https://github.com/Invariance-NaN/bn/assets/51858957/9cce1083-8a29-4893-9e49-4bea7802f08f)
+![benchmarks](https://github.com/Invariance-NaN/bn/assets/51858957/081d75aa-c1d1-49b9-b7d8-16e6d80bf855)
