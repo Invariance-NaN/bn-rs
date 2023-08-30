@@ -13,5 +13,7 @@ Data sets:
 | Data Set     | Status |
 |--------------|--------|
 | Random       | Done   |
-| ALARM        | ...    |
-| ...other benchmarks | ... |
+| ALARM        | Done   |
+| CHILD        | Done   |
+| ...          | ...    |
+
