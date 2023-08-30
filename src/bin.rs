@@ -1,3 +1,4 @@
+pub mod alarm;
 pub mod bayesian_network;
 pub mod iter;
 pub mod dataframe;
