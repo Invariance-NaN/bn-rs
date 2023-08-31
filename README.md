@@ -1,13 +1,12 @@
 # bn
 
-Algorithms:
-| Algorithm     | Status |
-|--------------|--------|
-| PC       | Done   |
-| Dual PC | Done |
-| Stable PC | Done   |
-| Shortcut PC | In Progress |
-| Dual Shortcut PC | In Progress |
+| Algorithm        | C++      | Rust      |
+|------------------|-------------|-------------|
+| PC               | Done        | Done        |
+| Dual PC          | Done        | Done        |
+| Stable PC        | Done        | Done        |
+| Shortcut PC      | Done | Done |
+| Dual Shortcut PC | Done | Done |
 
 Data sets:
 | Data Set     | Status |
