@@ -191,7 +191,7 @@ pub fn shortcut_pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
 pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut ci_tests = 0;
-   
+
     let mut graph = Graph::fully_connected(data.names().clone());
     let mut indices: HashSet<usize> = (0..graph.len()).collect();
     let mut sep_sets: SeperationSets = HashMap::new();
@@ -212,7 +212,7 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
                 for u in combinations(m - b.len(), s.iter().collect()) {
                     let u = u.into_iter().copied().collect();
                     let sep_set: Vec<_> = b.union(&u).copied().collect();
-            
+
                     ci_tests += 1;
                     if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
                         graph.remove_edge(x, y);
@@ -242,7 +242,7 @@ mod tests {
     fn sanity() {
         let nodes: Vec<_> = (0..6).map(|x| x.to_string()).collect();
 
-        let graph = crate::alarm::alarm();
+        let graph = crate::alarm::a();
 
         // let graph = {
         //     let mut graph = Digraph::unconnected(nodes.clone());
