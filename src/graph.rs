@@ -137,6 +137,22 @@ impl Graph {
     pub fn degree(&self, node: usize) -> usize {
         self.neighbors(node).len()
     }
+
+    pub fn edge_difference(&self, other: &Graph) -> usize {
+        // assert_eq!(self.len(), other.len());
+
+        let mut differences = 0;
+
+        for i in 0..std::cmp::min(self.len(), other.len()) {
+            for j in i + 1..std::cmp::min(self.len(), other.len()) {
+                if self.has_edge(i, j) != other.has_edge(i, j) {
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
 }
 
 

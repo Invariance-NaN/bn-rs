@@ -272,12 +272,13 @@ mod tests {
         let (result_pd, ci_pd) = pc_dual(df.clone(), graph.clone());
         let (result_sd, ci_sd) = shortcut_pc_dual(df.clone(), graph.clone());
 
+        let ud = graph.clone().undirected();
         println!("===========");
         // println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
-        println!("pc: {:?}", ci_pc);
-        println!("sc: {:?}", ci_sc);
-        println!("pd: {:?}", ci_pd);
-        println!("sd: {:?}", ci_sd);
+        println!("pc: {:?} (off by {})", ci_pc, result_pc.edge_difference(&ud));
+        println!("sc: {:?} (off by {})", ci_sc, result_sc.edge_difference(&ud));
+        println!("pd: {:?} (off by {})", ci_pd, result_pd.edge_difference(&ud));
+        println!("sd: {:?} (off by {})", ci_sd, result_sd.edge_difference(&ud));
 
         // assert_eq!(result_pc, graph.clone().undirected());
         // assert_eq!(result_pc, result_sc);
