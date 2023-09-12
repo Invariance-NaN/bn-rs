@@ -1,4 +1,4 @@
-pub mod alarm;
+pub mod fixed_graphs;
 pub mod bayesian_network;
 pub mod iter;
 pub mod dataframe;
@@ -52,7 +52,7 @@ fn main() {
                 let start_sc = Instant::now();
                 let (result_sc, ci_sc) = shortcut_pc(data_2, graph_2);
                 let sc_time = start_sc.elapsed();
-                
+
                 let start_pd = Instant::now();
                 let (result_pd, ci_pd) = pc_dual(data_3, graph_3);
                 let pd_time = start_pd.elapsed();

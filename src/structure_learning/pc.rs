@@ -234,7 +234,7 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
 mod tests {
     use super::*;
-    use std::time::Instant;
+    use std::time::{Instant, Duration};
     use rand::prelude::*;
     use crate::{dataframe::DataFrame, graph::{self, Digraph}};
 
@@ -242,7 +242,7 @@ mod tests {
     fn sanity() {
         let nodes: Vec<_> = (0..6).map(|x| x.to_string()).collect();
 
-        let graph = crate::alarm::a();
+        let graph = crate::fixed_graphs::munin();
 
         // let graph = {
         //     let mut graph = Digraph::unconnected(nodes.clone());
@@ -266,19 +266,32 @@ mod tests {
             df
         };
 
+        fn test(
+            f: impl Fn(DataFrame, Digraph) -> (Graph, u32),
+            df: &DataFrame,
+            graph: &Digraph
+        ) -> (Graph, u32, Duration) {
+            let df = df.clone();
+            let graph = graph.clone();
+            let start = Instant::now();
+            let (result, ci) = f(df, graph);
+            let time = start.elapsed();
+            (result, ci, time)
+        }
 
-        let (result_pc, ci_pc) = pc(df.clone(), graph.clone());
-        let (result_sc, ci_sc) = shortcut_pc(df.clone(), graph.clone());
-        let (result_pd, ci_pd) = pc_dual(df.clone(), graph.clone());
-        let (result_sd, ci_sd) = shortcut_pc_dual(df.clone(), graph.clone());
+        let (result_pc, ci_pc, time_pc) = test(pc, &df, &graph);
+        let (result_sc, ci_sc, time_sc) = test(shortcut_pc, &df, &graph);
+        let (result_pd, ci_pd, time_pd) = test(pc_dual, &df, &graph);
+        let (result_sd, ci_sd, time_sd) = test(shortcut_pc_dual, &df, &graph);
 
         let ud = graph.clone().undirected();
         println!("===========");
         // println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
-        println!("pc: {:?} (off by {})", ci_pc, result_pc.edge_difference(&ud));
-        println!("sc: {:?} (off by {})", ci_sc, result_sc.edge_difference(&ud));
-        println!("pd: {:?} (off by {})", ci_pd, result_pd.edge_difference(&ud));
-        println!("sd: {:?} (off by {})", ci_sd, result_sd.edge_difference(&ud));
+        // println!("pc-ac: {:?}\n, expt: {:?}", result_pc.clone(), graph.clone());
+        println!("pc: {:?} CI, {} ms (off by {})", ci_pc, time_pc.as_millis(), result_pc.edge_difference(&ud));
+        println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
+        println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));
+        println!("sd: {:?} CI, {} ms (off by {})", ci_sd, time_sd.as_millis(), result_sd.edge_difference(&ud));
 
         // assert_eq!(result_pc, graph.clone().undirected());
         // assert_eq!(result_pc, result_sc);
