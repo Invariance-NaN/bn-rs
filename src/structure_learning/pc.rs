@@ -166,6 +166,10 @@ pub fn shortcut_pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
             for y in graph.neighbors(x).clone() {
                 let (s, b, c) = sbc(&graph, x, y);
 
+                if (x, y) == (2, 4) || (x, y) == (4, 2) {
+
+                }
+
                 if b.len() > m { continue; }
                 for u in combinations(m - b.len(), s.iter().collect()) {
                     let u = u.into_iter().copied().collect();
@@ -199,13 +203,16 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
     for m in 0..=graph.len() - 2 {
         if m > graph.max_degree() { continue; }
-
+        println!("m = {}", m);
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
-                let (s, b, c) = sbc(&graph, x, y);
+                let (s, b, _c) = sbc(&graph, x, y);
 
                 if x == 2 && y == 4 {
-                    print!("");
+                    println!();
+                    println!("in 2-4_G: {:?}", graph.clone());
+                    println!("in 2-4_s: {:?}", s.clone());
+                    println!("in 2-4_b: {:?}", b.clone());
                 }
 
                 if b.len() > m { continue; }
@@ -215,6 +222,10 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
                     ci_tests += 1;
                     if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
+                        println!(" Removing node {} -- {}", x, y);
+                        println!("  S_xy: {:?}", s.iter().copied().collect::<Vec<_>>());
+                        println!("  B_xy: {:?}", b.iter().copied().collect::<Vec<_>>());
+                        println!("  sepset: {:?}", sep_set);
                         graph.remove_edge(x, y);
                         sep_sets.insert((x, y), sep_set.into_iter().collect());
                     }
@@ -242,23 +253,19 @@ mod tests {
     fn sanity() {
         let nodes: Vec<_> = (0..6).map(|x| x.to_string()).collect();
 
-        let graph = crate::fixed_graphs::munin();
+        // let graph = crate::fixed_graphs::munin();
 
-        // let graph = {
-        //     let mut graph = Digraph::unconnected(nodes.clone());
-        //     graph.add_edge(0, 1);
-        //     graph.add_edge(0, 2);
-        //     graph.add_edge(1, 4);
-        //     graph.add_edge(2, 3);
-        //     graph.add_edge(4, 5);
-        //     // 0..5:
-        //     // graph.add_edge(0, 2);
-        //     // graph.add_edge(0, 3);
-        //     // graph.add_edge(1, 3);
-        //     // graph.add_edge(1, 4);
-        //     // graph.add_edge(2, 4);
-        //     graph
-        // };
+        let graph = {
+            let mut graph = Digraph::unconnected(nodes.clone());
+            graph.add_edge(0, 1);
+            graph.add_edge(1, 2);
+            graph.add_edge(2, 3);
+            graph.add_edge(0, 4);
+            graph.add_edge(4, 5);
+            graph
+        };
+        // 0 -> 1 -> 2 -> 3
+        // + -> 4 -> 5
 
         let df = {
             let mut df = DataFrame::new(nodes.clone());
@@ -286,8 +293,9 @@ mod tests {
 
         let ud = graph.clone().undirected();
         println!("===========");
-        // println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
-        // println!("pc-ac: {:?}\n, expt: {:?}", result_pc.clone(), graph.clone());
+        println!("expected: {a:?}\nexpected-undirected: {b:?}", b=graph.clone().undirected(),a=graph.clone());
+        println!("pc: {:?}", result_pc.clone());
+        println!("sc: {:?}", result_sc.clone());
         println!("pc: {:?} CI, {} ms (off by {})", ci_pc, time_pc.as_millis(), result_pc.edge_difference(&ud));
         println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
         println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));

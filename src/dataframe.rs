@@ -158,15 +158,15 @@ impl DataFrame {
             if result >= 1e12 { return true; }
         }
 
-        let mut hasher = DefaultHasher::new();
-        x.hash(&mut hasher);
-        y.hash(&mut hasher);
-        zs.hash(&mut hasher);
-        let hash = hasher.finish();
+        // let mut hasher = DefaultHasher::new();
+        // x.hash(&mut hasher);
+        // y.hash(&mut hasher);
+        // zs.hash(&mut hasher);
+        // let hash = hasher.finish();
 
-        if hash < u64::MAX / 50 {
-            return !graph.d_separated(x, y, zs);
-        }
+        // if hash < u64::MAX / 50 {
+        //     return !graph.d_separated(x, y, zs);
+        // }
 
         return graph.d_separated(x, y, zs);
     }
