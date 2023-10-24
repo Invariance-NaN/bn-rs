@@ -97,13 +97,9 @@ pub fn pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     return (graph, ci_tests);
 }
 
-fn sbc(graph: &Graph, x: usize, y: usize) -> (HashSet<usize>, HashSet<usize>, HashSet<usize>) {
-    let (mut s, mut b, mut c) = {
-        let mut c = (0..graph.len()).collect::<HashSet<_>>();
-        c.remove(&x);
-        c.remove(&y);
-        (HashSet::new(), HashSet::new(), c)
-    };
+fn wb(graph: &Graph, x: usize, y: usize) -> (HashSet<usize>, HashSet<usize>, HashSet<usize>) {
+    let mut w = HashSet::new();
+    let mut b = HashSet::new();
 
     let mut graph_prime = graph.clone();
     graph_prime.isolate(x);
@@ -111,16 +107,14 @@ fn sbc(graph: &Graph, x: usize, y: usize) -> (HashSet<usize>, HashSet<usize>, Ha
 
     for z in graph.neighbors(x).intersection(graph.neighbors(y)) {
         let r = graph_prime.component(*z);
-        c.retain(|w| !r.contains(&w));
-
-        s = s.union(&r.intersection(
-            &graph.neighbors(x).iter().copied().collect()
-        ).copied().collect()).copied().collect();
-
-        for w in r {
-            graph_prime.isolate(w);
+        for x in r.drain() {
+            w.insert(x);
         }
     }
+
+    let c: HashSet<usize> = {
+        let result =
+    };
 
     for &z in graph.neighbors(x) {
         if graph_prime.degree(z) > 0 {
@@ -148,7 +142,7 @@ fn sbc(graph: &Graph, x: usize, y: usize) -> (HashSet<usize>, HashSet<usize>, Ha
         }
     }
 
-    (s, b, c)
+    (w, b, c)
 }
 
 
@@ -164,7 +158,7 @@ pub fn shortcut_pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
-                let (s, b, c) = sbc(&graph, x, y);
+                let (s, b, c) = wb(&graph, x, y);
 
                 if (x, y) == (2, 4) || (x, y) == (4, 2) {
 
@@ -206,7 +200,7 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
         println!("m = {}", m);
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
-                let (s, b, _c) = sbc(&graph, x, y);
+                let (s, b, _c) = wb(&graph, x, y);
 
                 if x == 2 && y == 4 {
                     println!();
