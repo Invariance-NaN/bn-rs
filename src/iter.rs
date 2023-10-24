@@ -1,17 +1,17 @@
 use std::{borrow::BorrowMut, result};
 
-pub fn combinations<T: Copy>(n: usize, xs: Vec<T>) -> Combinations<T> {
+pub fn combinations<T: Copy>(n: usize, xs: &[T]) -> Combinations<T> {
     Combinations { n, xs, indices: None }
 }
 
 #[derive(Clone)]
-pub struct Combinations<T> {
+pub struct Combinations<'a, T> {
     n: usize,
-    xs: Vec<T>,
+    xs: &'a [T],
     indices: Option<Vec<usize>>
 }
 
-impl<T: Copy> Iterator for Combinations<T> {
+impl<'a, T: Copy> Iterator for Combinations<'a, T> {
     type Item = Vec<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -86,4 +86,3 @@ impl<T, Xs: Iterator<Item = T>, Ys: Iterator<Item = T>> Iterator for Interleave<
         item
     }
 }
-
