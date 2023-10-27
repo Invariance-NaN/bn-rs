@@ -166,8 +166,6 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
                     .filter(|v| b.contains(v))
                     .count();
 
-
-
                 for u_size in m.saturating_sub(leeway)..=m {
                     let u_super = graph.neighbors(x)
                         .iter()
@@ -178,6 +176,10 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
                     for u in combinations(u_size, u_super) {
                         let u = u.into_iter().collect();
                         let sep_set: Vec<_> = b.union(&u).copied().collect();
+
+                        print!("{} indep {} given [", x, y);
+                        for &z in &sep_set {  print!(" {}", z);  }
+                        println!(" ]");
 
                         ci_tests += 1;
                         if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
@@ -284,7 +286,7 @@ mod tests {
         }
 
         let (result_pc, ci_pc, time_pc) = test(pc, &df, &graph);
-        // let (result_sc, ci_sc, time_sc) = test(shortcut_pc, &df, &graph);
+        let (result_sc, ci_sc, time_sc) = test(shortcut_pc, &df, &graph);
         let (result_pd, ci_pd, time_pd) = test(pc_dual, &df, &graph);
         // let (result_sd, ci_sd, time_sd) = test(shortcut_pc_dual, &df, &graph);
 
@@ -293,7 +295,7 @@ mod tests {
         // println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
         // println!("pc-ac: {:?}\n, expt: {:?}", result_pc.clone(), graph.clone());
         println!("pc: {:?} CI, {} ms (off by {})", ci_pc, time_pc.as_millis(), result_pc.edge_difference(&ud));
-        // println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
+        println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
         println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));
         // println!("sd: {:?} CI, {} ms (off by {})", ci_sd, time_sd.as_millis(), result_sd.edge_difference(&ud));
 
