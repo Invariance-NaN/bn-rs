@@ -10,10 +10,6 @@ use std::time::Instant;
 use crate::structure_learning::pc::*;
 use crate::dataframe::*;
 use crate::graph::*;
-use rand::prelude::*;
-
-use rayon::iter::repeatn;
-use rayon::prelude::*;
 
 // fn main_no() {
 //     println!("[");

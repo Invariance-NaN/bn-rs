@@ -1,5 +1,4 @@
 use std::collections::{HashSet, HashMap};
-use rayon::prelude::*;
 
 use crate::{graph::{Graph, Digraph}, dataframe::DataFrame, iter::{combinations, interleave}};
 
