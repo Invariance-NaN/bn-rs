@@ -98,59 +98,54 @@ pub fn pc_dual(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 }
 
 fn wbc(graph: &Graph, x: usize, y: usize) -> (HashSet<usize>, HashSet<usize>, HashSet<usize>) {
-    let (mut s, mut b, mut c) = {
-        let mut c = (0..graph.len()).collect::<HashSet<_>>();
-        c.remove(&x);
-        c.remove(&y);
-        (HashSet::new(), HashSet::new(), c)
-    };
+    let mut w = HashSet::new();
+    let mut b = HashSet::new();
 
     let mut graph_prime = graph.clone();
     graph_prime.isolate(x);
     graph_prime.isolate(y);
 
     for z in graph.neighbors(x).intersection(graph.neighbors(y)) {
-        let r = graph_prime.component(*z);
-        c.retain(|w| !r.contains(&w));
-
-        s = s.union(&r.intersection(
-            &graph.neighbors(x).iter().copied().collect()
-        ).copied().collect()).copied().collect();
-
-        for w in r {
-            graph_prime.isolate(w);
+        for x in graph_prime.component(*z) {
+            w.insert(x);
         }
     }
+
+    let c: HashSet<usize> = {
+        let mut result: HashSet<usize> = (0..graph.len()).collect();
+        result.remove(&x);
+        result.remove(&y);
+        for node in &w { result.remove(node); }
+        result
+    };
+
+    for &node in &w {
+        graph_prime.isolate(node);
+    }
+
+
+    let r_prime = {
+        let mut graph_alt = graph.clone();
+
+        for &node in w.iter().chain(graph.neighbors(x).iter()) {
+            if node == y { continue; }
+            graph_alt.isolate(node);
+        }
+
+        graph_alt.component(y)
+    };
 
     for &z in graph.neighbors(x) {
-        if graph_prime.degree(z) > 0 {
-            graph_prime.add_edge(x, z);
+        if !c.contains(&z) { continue; }
+
+        if graph_prime.neighbors(z).iter().any(|node| r_prime.contains(node)) {
+            b.insert(z);
+            b.extend(graph_prime.neighbors(z).iter());
         }
     }
 
-    for &z in graph.neighbors(y) {
-        if graph_prime.degree(z) > 0 {
-            graph_prime.add_edge(x, y);
-        }
-    }
-
-
-    for &z in graph_prime.neighbors(x) {
-        for &v in graph_prime.neighbors(z) {
-            if v == x { continue; }
-
-            let r_v = graph_prime.component(v);
-
-            if r_v.into_iter().any(|w| graph.has_edge(w, z)) {
-                b.insert(z);
-                b.insert(v);
-            }
-        }
-    }
-
-    (s, b, c)
+    (w, b, c)
 }
-
 
 pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut ci_tests = 0;
@@ -160,26 +155,35 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
     let mut sep_sets: SeperationSets = HashMap::new();
 
 
-    for m in 0..=graph.len() - 2 {
+    for m in 0.. {
         if m > graph.max_degree() { continue; }
 
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
-                let (s, b, c) = wbc(&graph, x, y);
+                let (w, b, _c) = wbc(&graph, x, y);
 
-                if x == 2 && y == 4 {
-                    print!("");
-                }
+                let leeway = graph.neighbors(x).iter()
+                    .filter(|v| b.contains(v))
+                    .count();
 
-                if b.len() > m { continue; }
-                for u in combinations(m - b.len(), s.iter().collect()) {
-                    let u = u.into_iter().copied().collect();
-                    let sep_set: Vec<_> = b.union(&u).copied().collect();
 
-                    ci_tests += 1;
-                    if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
-                        graph.remove_edge(x, y);
-                        sep_sets.insert((x, y), sep_set.into_iter().collect());
+
+                for u_size in m.saturating_sub(leeway)..=m {
+                    let u_super = graph.neighbors(x)
+                        .iter()
+                        .filter(|v| w.contains(v))
+                        .copied()
+                        .collect();
+
+                    for u in combinations(u_size, u_super) {
+                        let u = u.into_iter().collect();
+                        let sep_set: Vec<_> = b.union(&u).copied().collect();
+
+                        ci_tests += 1;
+                        if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
+                            graph.remove_edge(x, y);
+                            sep_sets.insert((x, y), sep_set.into_iter().collect());
+                        }
                     }
                 }
             }
@@ -280,7 +284,7 @@ mod tests {
         }
 
         let (result_pc, ci_pc, time_pc) = test(pc, &df, &graph);
-        let (result_sc, ci_sc, time_sc) = test(shortcut_pc, &df, &graph);
+        // let (result_sc, ci_sc, time_sc) = test(shortcut_pc, &df, &graph);
         let (result_pd, ci_pd, time_pd) = test(pc_dual, &df, &graph);
         // let (result_sd, ci_sd, time_sd) = test(shortcut_pc_dual, &df, &graph);
 
@@ -289,7 +293,7 @@ mod tests {
         // println!("actual: {a:?}\nactual-undirected: {b:?}", b=graph.clone().undirected(),a=graph);
         // println!("pc-ac: {:?}\n, expt: {:?}", result_pc.clone(), graph.clone());
         println!("pc: {:?} CI, {} ms (off by {})", ci_pc, time_pc.as_millis(), result_pc.edge_difference(&ud));
-        println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
+        // println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
         println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));
         // println!("sd: {:?} CI, {} ms (off by {})", ci_sd, time_sd.as_millis(), result_sd.edge_difference(&ud));
 
