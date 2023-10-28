@@ -176,9 +176,7 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
                         let u = u.into_iter().collect();
                         let sep_set: Vec<_> = b.union(&u).copied().collect();
 
-                        print!("{} indep {} given [", x, y);
                         for &z in &sep_set {  print!(" {}", z);  }
-                        println!(" ]");
 
                         ci_tests += 1;
                         if data.fake_conditionally_independent(x, y, sep_set.clone(), &answer) {
@@ -245,24 +243,22 @@ mod tests {
 
     #[test]
     fn sanity() {
-        let nodes: Vec<_> = (0..6).map(|x| x.to_string()).collect();
+        let (graph, nodes) = {
+            let g = crate::fixed_graphs::alarm();
+            let n = g.names().clone();
+            (g, n)
+        };
 
-        let graph = crate::fixed_graphs::munin();
-
-        // let graph = {
+        // let (graph, nodes) = {
+        //     let nodes: Vec<_> = (0..6).map(|x| x.to_string()).collect();
         //     let mut graph = Digraph::unconnected(nodes.clone());
         //     graph.add_edge(0, 1);
         //     graph.add_edge(0, 2);
         //     graph.add_edge(1, 4);
         //     graph.add_edge(2, 3);
         //     graph.add_edge(4, 5);
-        //     // 0..5:
-        //     // graph.add_edge(0, 2);
-        //     // graph.add_edge(0, 3);
-        //     // graph.add_edge(1, 3);
-        //     // graph.add_edge(1, 4);
-        //     // graph.add_edge(2, 4);
-        //     graph
+        //     graph.add_edge(1, 5);
+        //     (graph, nodes)
         // };
 
         let df = {
@@ -286,7 +282,7 @@ mod tests {
 
         let (result_pc, ci_pc, time_pc) = test(pc, &df, &graph);
         let (result_sc, ci_sc, time_sc) = test(shortcut_pc, &df, &graph);
-        let (result_pd, ci_pd, time_pd) = test(pc_dual, &df, &graph);
+        // let (result_pd, ci_pd, time_pd) = test(pc_dual, &df, &graph);
         // let (result_sd, ci_sd, time_sd) = test(shortcut_pc_dual, &df, &graph);
 
         let ud = graph.clone().undirected();
@@ -295,11 +291,11 @@ mod tests {
         // println!("pc-ac: {:?}\n, expt: {:?}", result_pc.clone(), graph.clone());
         println!("pc: {:?} CI, {} ms (off by {})", ci_pc, time_pc.as_millis(), result_pc.edge_difference(&ud));
         println!("sc: {:?} CI, {} ms (off by {})", ci_sc, time_sc.as_millis(), result_sc.edge_difference(&ud));
-        println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));
+        // println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));
         // println!("sd: {:?} CI, {} ms (off by {})", ci_sd, time_sd.as_millis(), result_sd.edge_difference(&ud));
 
         assert_eq!(result_pc, graph.clone().undirected());
-        // assert_eq!(result_pc, result_sc);
+        assert_eq!(result_pc, result_sc);
         // assert_eq!(result_pc, result_pd);
         // assert_eq!(result_pc, result_sd);
     }
