@@ -155,7 +155,7 @@ pub fn shortcut_pc(data: DataFrame, answer: Digraph) -> (Graph, u32) {
 
 
     for m in 0.. {
-        if m > graph.max_degree() { continue; }
+        if m > graph.max_degree() { break; }
 
         for x in 0..graph.len() {
             for y in graph.neighbors(x).clone() {
@@ -298,7 +298,7 @@ mod tests {
         println!("pd: {:?} CI, {} ms (off by {})", ci_pd, time_pd.as_millis(), result_pd.edge_difference(&ud));
         // println!("sd: {:?} CI, {} ms (off by {})", ci_sd, time_sd.as_millis(), result_sd.edge_difference(&ud));
 
-        // assert_eq!(result_pc, graph.clone().undirected());
+        assert_eq!(result_pc, graph.clone().undirected());
         // assert_eq!(result_pc, result_sc);
         // assert_eq!(result_pc, result_pd);
         // assert_eq!(result_pc, result_sd);
