@@ -29,6 +29,8 @@ impl Graph {
         Graph { names, neighbors }
     }
 
+    pub fn names(&self) -> &Vec<String> { &self.names }
+
     pub fn len(&self) -> usize { self.names.len() }
 
     pub fn node_index(&self, name: String) -> Option<usize> {
@@ -171,6 +173,8 @@ impl Digraph {
     pub fn fully_connected(names: Vec<String>) -> Self {
         Graph::fully_connected(names).directed()
     }
+
+    pub fn names(&self) -> &Vec<String> { &self.names }
 
     pub fn len(&self) -> usize { self.names.len() }
 
